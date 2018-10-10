@@ -1,0 +1,164 @@
+<!<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Conway's Game of Life</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <link rel="stylesheet" type="text/css" media="screen" href="main.css" /> -->
+    <style>
+    .wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }    
+    .row {
+        display: flex;
+    }
+    .dot{
+        width: 20px;
+        height: 20px;
+        border: 1px solid rgb(70, 70, 70);
+    }
+    .dead {
+        background-color: #000;
+    }
+    .alive {
+        background-color: #fff;
+    }
+    .dot:hover {
+        background-color: rgb(70, 70, 70);
+    }
+    </style>
+</head>
+<body>
+<div class="controls">
+    <input id="stepInterval" placeholder="Speed (ms)" type="number" value="300">
+    <!-- <input id="gridSize" placeholder="Grid size (cells per side)" type="number" value="30"> -->
+    <button id="runGame">Run</button>
+    <button id="stopGame">Stop</button>
+</div>
+<div class="wrap">
+    <div class="mainBody"></div>
+</div>
+    
+<script>
+    const body = document.querySelector('.mainBody');
+    let cellsAmount;
+    let arrOfIteration = [];
+
+    
+    function createGrid(amount) {
+        cellsAmount = amount * amount;
+        
+        function createDots(amount, row) {
+            let dots = [];
+            for (let i = 1; i <= amount; i++) {
+                dots.push(`<div id="${row}-${i}" class="dot dead"></div>`);
+            }
+            return dots.join('');
+        }
+
+        let rows = [];
+        for (let i = 1; i <= amount; i++) {
+            rows.push(`<div class="row">${createDots(amount, i)}</div>`)
+        }
+        body.innerHTML = rows.join('');
+    }
+
+    createGrid(33);
+
+    let cell;
+
+    function convertCell() {
+        if (this.className.includes('dead')) {
+            this.classList.remove('dead');
+            this.classList.add('alive');
+        } else {
+            this.classList.remove('alive');
+            this.classList.add('dead');
+        }
+    }
+
+    Array.from(document.querySelectorAll('.dot')).forEach(i=> i.addEventListener('click', convertCell));
+
+    function simulateLife() {
+        arrOfIteration = [];
+        Array.from(document.querySelectorAll('.dot')).forEach(i=> checkNeighbours(i));
+        //console.log('simulation ended');
+    }
+
+    function checkNeighbours(i) {
+        const [thisY, thisX] =(i.id).split('-').map(i => +(i));
+        const dById = (i) => document.getElementById(`${i}`);
+        const rowAbove = thisY-1;
+        const rowBelow = thisY+1;
+        
+
+        const neighbours = [ //clockwise from top-left
+            `${rowAbove}-${thisX-1}`, //top left
+            `${rowAbove}-${thisX}`, //top center
+            `${rowAbove}-${thisX+1}`, //top right
+            `${thisY}-${thisX+1}`, // center right
+            `${rowBelow}-${thisX+1}`, //bottom right
+            `${rowBelow}-${thisX}`, //bottom center
+            `${rowBelow}-${thisX-1}`, //bottom left
+            `${thisY}-${thisX-1}`, // center left
+        ];
+        const neightboursClasslist = neighbours.map(i => dById(i) ? dById(i).classList[1] : '').filter(i => i !== '');
+        
+        let isDead = i.classList.contains('dead');
+        let isAlive = i.classList.contains('alive');
+        let aliveAmount = neightboursClasslist.filter(i => i === 'alive').length;
+        if (aliveAmount != 2 && aliveAmount != 3) {
+            arrOfIteration.push([i.id,'dead'])
+        } else if (isDead && aliveAmount === 3) {
+            arrOfIteration.push([i.id,'alive'])
+        } else if (isAlive && (aliveAmount === 2 || aliveAmount === 3) ) {
+            arrOfIteration.push([i.id,'alive'])
+        }    
+
+    }
+
+    function showResults() {
+        //console.log('now showing results')
+      for (let i of arrOfIteration)  {
+          document.getElementById(i[0]).classList.remove('alive');
+          document.getElementById(i[0]).classList.remove('dead');
+          document.getElementById(i[0]).classList.add(i[1]);
+      }
+    }
+
+    function step() {
+        simulateLife();
+        setTimeout(()=>{
+            showResults();
+        },0)
+    }
+
+    let interval;
+    function runGame(speed = 300) {
+        interval = setInterval(step, speed)       
+    }
+    function stopGame() {
+        clearInterval(interval)       
+    }
+    
+    
+    //createGrid(grid size in cells amount per side);
+    //runGame(set speed in ms); default value is 300ms
+    //stopGame();
+    // document.querySelector('#gridSize').addEventListener('blur',()=>{
+    //     createGrid(+(document.querySelector('#gridSize').value));
+    //     runGame(1000);
+    //     stopGame();
+    // })
+    document.querySelector('#runGame').addEventListener('click',()=> {
+        stopGame();
+        runGame(+(document.querySelector('#stepInterval').value));
+        });
+    document.querySelector('#stopGame').addEventListener('click', stopGame);
+    
+</script>    
+</body>
+</html>
